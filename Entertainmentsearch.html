@@ -74,6 +74,25 @@
         opacity:0.9;
     }
 
+    button:disabled{
+        opacity:0.5;
+        cursor:not-allowed;
+    }
+
+    .loading{
+        text-align:center;
+        padding:20px;
+        color:#f5c518;
+    }
+
+    .error{
+        background:#7f1d1d;
+        color:#fecaca;
+        padding:15px;
+        border-radius:8px;
+        margin:10px 0;
+    }
+
     .results{
         display:grid;
         grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
@@ -87,13 +106,26 @@
         border:1px solid #374151;
     }
 
+    .poster{
+        width:100%;
+        height:300px;
+        object-fit:cover;
+        border-radius:8px;
+        margin-bottom:15px;
+    }
+
     .card h2{
         color:#f5c518;
         margin-bottom:10px;
     }
 
-    .streaming{
+    .rating{
+        background:#374151;
+        display:inline-block;
+        padding:8px 12px;
+        border-radius:6px;
         margin:10px 0;
+        font-weight:bold;
     }
 
     .badge{
@@ -126,6 +158,29 @@
     .imdb-link:hover{
         text-decoration:underline;
     }
+
+    .api-key-section{
+        background:#1f2937;
+        padding:15px;
+        border-radius:8px;
+        margin-bottom:20px;
+        border:1px solid #374151;
+    }
+
+    .api-key-section input{
+        width:100%;
+    }
+
+    .api-key-section a{
+        color:#60a5fa;
+    }
+
+    .plot{
+        margin:10px 0;
+        font-size:14px;
+        line-height:1.5;
+        color:#d1d5db;
+    }
 </style>
 </head>
 
@@ -135,49 +190,37 @@
 
     <h1>🎬 IMDb Movie & Series Finder</h1>
 
+    <div class="api-key-section">
+        <label>OMDB API Key (Get free key at <a href="https://www.omdbapi.com/" target="_blank">omdbapi.com</a>)</label>
+        <input type="password" id="apiKey" placeholder="Enter your OMDB API key">
+    </div>
+
     <div class="search-box">
 
         <div class="grid">
 
             <div>
-                <label>IMDb Link</label>
-                <input type="text" id="imdbLink" placeholder="Paste IMDb link here">
+                <label>Search Title</label>
+                <input type="text" id="searchTitle" placeholder="Enter movie or series name">
             </div>
 
             <div>
-                <label>Genre</label>
-                <select id="genre">
-                    <option>All</option>
-                    <option>Action</option>
-                    <option>Comedy</option>
-                    <option>Drama</option>
-                    <option>Thriller</option>
-                    <option>Sci-Fi</option>
-                    <option>Romance</option>
-                    <option>Crime</option>
-                    <option>Horror</option>
-                    <option>Adventure</option>
+                <label>Type</label>
+                <select id="type">
+                    <option value="">All</option>
+                    <option value="movie">Movie</option>
+                    <option value="series">Series</option>
                 </select>
             </div>
 
             <div>
-                <label>Language</label>
-                <select id="language">
-                    <option>All</option>
-                    <option>English</option>
-                    <option>Hindi</option>
-                    <option>Tamil</option>
-                    <option>Telugu</option>
-                    <option>Korean</option>
-                    <option>Japanese</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                </select>
+                <label>Year</label>
+                <input type="number" id="year" placeholder="e.g., 2020">
             </div>
 
         </div>
 
-        <button onclick="searchShows()">Search</button>
+        <button onclick="searchShows()" id="searchBtn">Search</button>
 
     </div>
 
@@ -187,105 +230,111 @@
 
 <script>
 
-const sampleData = [
-    {
-        name:"Breaking Bad",
-        genre:"Drama",
-        language:"English",
-        streaming:["Netflix"],
-        imdb:"https://www.imdb.com/title/tt0903747/"
-    },
-    {
-        name:"Money Heist",
-        genre:"Crime",
-        language:"Spanish",
-        streaming:["Netflix"],
-        imdb:"https://www.imdb.com/title/tt6468322/"
-    },
-    {
-        name:"Dark",
-        genre:"Sci-Fi",
-        language:"German",
-        streaming:["Netflix"],
-        imdb:"https://www.imdb.com/title/tt5753856/"
-    },
-    {
-        name:"Mirzapur",
-        genre:"Crime",
-        language:"Hindi",
-        streaming:["Amazon Prime Video"],
-        imdb:"https://www.imdb.com/title/tt6473300/"
-    },
-    {
-        name:"The Boys",
-        genre:"Action",
-        language:"English",
-        streaming:["Amazon Prime Video"],
-        imdb:"https://www.imdb.com/title/tt1190634/"
-    },
-    {
-        name:"Stranger Things",
-        genre:"Sci-Fi",
-        language:"English",
-        streaming:["Netflix"],
-        imdb:"https://www.imdb.com/title/tt4574334/"
-    }
-];
-
-function searchShows(){
-
-    const genre = document.getElementById("genre").value;
-    const language = document.getElementById("language").value;
-
+async function searchShows(){
+    const apiKey = document.getElementById("apiKey").value;
+    const searchTitle = document.getElementById("searchTitle").value;
+    const type = document.getElementById("type").value;
+    const year = document.getElementById("year").value;
     const resultsDiv = document.getElementById("results");
+    const searchBtn = document.getElementById("searchBtn");
 
-    resultsDiv.innerHTML = "";
-
-    const filtered = sampleData.filter(show => {
-
-        const genreMatch = genre === "All" || show.genre === genre;
-        const languageMatch = language === "All" || show.language === language;
-
-        return genreMatch && languageMatch;
-    });
-
-    if(filtered.length === 0){
-        resultsDiv.innerHTML = "<p>No shows found.</p>";
+    if(!apiKey){
+        resultsDiv.innerHTML = '<div class="error">Please enter your OMDB API key first.</div>';
         return;
     }
 
-    filtered.forEach(show => {
+    if(!searchTitle){
+        resultsDiv.innerHTML = '<div class="error">Please enter a search title.</div>';
+        return;
+    }
 
-        const card = document.createElement("div");
-        card.className = "card";
+    searchBtn.disabled = true;
+    resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
 
-        card.innerHTML = `
-            <h2>${show.name}</h2>
+    try {
+        let url = `https://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(searchTitle)}`;
+        
+        if(type){
+            url += `&type=${type}`;
+        }
 
-            <p><strong>Genre:</strong> ${show.genre}</p>
-            <p><strong>Language:</strong> ${show.language}</p>
+        if(year){
+            url += `&y=${year}`;
+        }
 
-            <div class="streaming">
-                <strong>Available On:</strong><br>
-                ${show.streaming.map(platform => `<span class="badge">${platform}</span>`).join("")}
-            </div>
+        const response = await fetch(url);
+        const data = await response.json();
 
-            <div class="seen">
-                <label>
-                    <input type="checkbox">
-                    Already Seen
-                </label>
-            </div>
+        if(data.Response === "False"){
+            resultsDiv.innerHTML = `<div class="error">No results found. ${data.Error}</div>`;
+            searchBtn.disabled = false;
+            return;
+        }
 
-            <a class="imdb-link" href="${show.imdb}" target="_blank">
-                Open IMDb Page
-            </a>
-        `;
+        resultsDiv.innerHTML = "";
 
-        resultsDiv.appendChild(card);
-    });
+        for(const result of data.Search){
+            const detailsResponse = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${result.imdbID}`);
+            const details = await detailsResponse.json();
 
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const posterUrl = details.Poster !== "N/A" ? details.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
+            const plot = details.Plot !== "N/A" ? details.Plot : "No plot available";
+            const rating = details.imdbRating !== "N/A" ? `⭐ ${details.imdbRating}/10` : "No rating";
+            const genres = details.Genre !== "N/A" ? details.Genre : "N/A";
+            const released = details.Released !== "N/A" ? details.Released : "N/A";
+
+            card.innerHTML = `
+                <img src="${posterUrl}" alt="${details.Title}" class="poster" onerror="this.src='https://via.placeholder.com/300x450?text=No+Poster'">
+                <h2>${details.Title}</h2>
+                
+                <p><strong>Type:</strong> ${details.Type}</p>
+                <p><strong>Released:</strong> ${released}</p>
+                <p><strong>Genre:</strong> ${genres}</p>
+                
+                <div class="rating">${rating}</div>
+                
+                <div class="plot">
+                    <strong>Plot:</strong><br>
+                    ${plot}
+                </div>
+
+                <div class="streaming">
+                    <strong>Details:</strong><br>
+                    <span class="badge">Runtime: ${details.Runtime}</span>
+                    <span class="badge">Director: ${details.Director !== "N/A" ? details.Director : "N/A"}</span>
+                </div>
+
+                <div class="seen">
+                    <label>
+                        <input type="checkbox">
+                        Already Seen
+                    </label>
+                </div>
+
+                <a class="imdb-link" href="https://www.imdb.com/title/${details.imdbID}/" target="_blank">
+                    Open IMDb Page
+                </a>
+            `;
+
+            resultsDiv.appendChild(card);
+        }
+
+    } catch(error){
+        resultsDiv.innerHTML = `<div class="error">Error fetching data: ${error.message}</div>`;
+    }
+
+    searchBtn.disabled = false;
 }
+
+// Allow Enter key to search
+document.getElementById("searchTitle").addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        searchShows();
+    }
+});
 
 </script>
 
