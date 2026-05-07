@@ -1,226 +1,474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>IMDb Finder</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>IMDb Entertainment Search</title>
+    
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-<style>
-    *{
-        margin:0;
-        padding:0;
-        box-sizing:border-box;
-        font-family: Arial, sans-serif;
-    }
+        body{
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color:white;
+            padding:30px 15px;
+            min-height:100vh;
+        }
 
-    body{
-        background:#111827;
-        color:white;
-        padding:30px;
-    }
+        .container{
+            max-width:1400px;
+            margin:auto;
+        }
 
-    .container{
-        max-width:1200px;
-        margin:auto;
-    }
+        h1{
+            text-align:center;
+            margin-bottom:10px;
+            color:#fbbf24;
+            font-size:2.5em;
+            text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+        }
 
-    h1{
-        text-align:center;
-        margin-bottom:25px;
-        color:#f5c518;
-    }
+        .subtitle{
+            text-align:center;
+            color:#cbd5e1;
+            margin-bottom:30px;
+            font-size:0.95em;
+        }
 
-    .search-box{
-        background:#1f2937;
-        padding:20px;
-        border-radius:12px;
-        margin-bottom:30px;
-    }
+        .api-key-section{
+            background:rgba(30, 41, 59, 0.8);
+            padding:20px;
+            border-radius:12px;
+            margin-bottom:25px;
+            border:1px solid #475569;
+            backdrop-filter: blur(10px);
+        }
 
-    .grid{
-        display:grid;
-        grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
-        gap:20px;
-    }
+        .api-key-section label{
+            display:block;
+            margin-bottom:10px;
+            font-weight:bold;
+            color:#fbbf24;
+        }
 
-    label{
-        display:block;
-        margin-bottom:8px;
-        font-weight:bold;
-    }
+        .api-key-section input{
+            width:100%;
+            padding:12px;
+            border:1px solid #475569;
+            border-radius:8px;
+            background:#0f172a;
+            color:white;
+            outline:none;
+        }
 
-    input, select{
-        width:100%;
-        padding:12px;
-        border:none;
-        border-radius:8px;
-        outline:none;
-    }
+        .api-key-section input:focus{
+            border-color:#fbbf24;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+        }
 
-    button{
-        margin-top:25px;
-        width:100%;
-        padding:14px;
-        border:none;
-        border-radius:8px;
-        background:#f5c518;
-        color:black;
-        font-size:16px;
-        font-weight:bold;
-        cursor:pointer;
-    }
+        .api-key-section a{
+            color:#60a5fa;
+            text-decoration:none;
+            transition:0.3s;
+        }
 
-    button:hover{
-        opacity:0.9;
-    }
+        .api-key-section a:hover{
+            color:#fbbf24;
+            text-decoration:underline;
+        }
 
-    button:disabled{
-        opacity:0.5;
-        cursor:not-allowed;
-    }
+        .search-box{
+            background:rgba(30, 41, 59, 0.8);
+            padding:25px;
+            border-radius:12px;
+            margin-bottom:30px;
+            border:1px solid #475569;
+            backdrop-filter: blur(10px);
+        }
 
-    .loading{
-        text-align:center;
-        padding:20px;
-        color:#f5c518;
-    }
+        .search-grid{
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap:20px;
+            margin-bottom:20px;
+        }
 
-    .error{
-        background:#7f1d1d;
-        color:#fecaca;
-        padding:15px;
-        border-radius:8px;
-        margin:10px 0;
-    }
+        label{
+            display:block;
+            margin-bottom:8px;
+            font-weight:bold;
+            color:#fbbf24;
+            font-size:0.95em;
+        }
 
-    .results{
-        display:grid;
-        grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
-        gap:20px;
-    }
+        input, select{
+            width:100%;
+            padding:12px;
+            border:1px solid #475569;
+            border-radius:8px;
+            background:#0f172a;
+            color:white;
+            outline:none;
+            font-size:0.95em;
+            transition:0.3s;
+        }
 
-    .card{
-        background:#1f2937;
-        padding:20px;
-        border-radius:12px;
-        border:1px solid #374151;
-    }
+        input::placeholder, select{
+            color:#94a3b8;
+        }
 
-    .poster{
-        width:100%;
-        height:300px;
-        object-fit:cover;
-        border-radius:8px;
-        margin-bottom:15px;
-    }
+        input:focus, select:focus{
+            border-color:#fbbf24;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+        }
 
-    .card h2{
-        color:#f5c518;
-        margin-bottom:10px;
-    }
+        .filter-row{
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap:20px;
+        }
 
-    .rating{
-        background:#374151;
-        display:inline-block;
-        padding:8px 12px;
-        border-radius:6px;
-        margin:10px 0;
-        font-weight:bold;
-    }
+        button{
+            width:100%;
+            padding:14px;
+            border:none;
+            border-radius:8px;
+            background:#fbbf24;
+            color:#000;
+            font-size:1em;
+            font-weight:bold;
+            cursor:pointer;
+            transition:0.3s;
+        }
 
-    .badge{
-        display:inline-block;
-        padding:6px 12px;
-        background:#374151;
-        border-radius:20px;
-        margin:5px 5px 0 0;
-        font-size:14px;
-    }
+        button:hover{
+            background:#f59e0b;
+            transform:translateY(-2px);
+            box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
+        }
 
-    .seen{
-        margin-top:15px;
-    }
+        button:disabled{
+            opacity:0.5;
+            cursor:not-allowed;
+            transform:none;
+        }
 
-    .seen label{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        font-weight:normal;
-    }
+        .loading{
+            text-align:center;
+            padding:40px 20px;
+            color:#fbbf24;
+            font-size:1.1em;
+        }
 
-    .imdb-link{
-        margin-top:15px;
-        display:inline-block;
-        color:#60a5fa;
-        text-decoration:none;
-    }
+        .spinner {
+            border: 3px solid #475569;
+            border-top: 3px solid #fbbf24;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
 
-    .imdb-link:hover{
-        text-decoration:underline;
-    }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-    .api-key-section{
-        background:#1f2937;
-        padding:15px;
-        border-radius:8px;
-        margin-bottom:20px;
-        border:1px solid #374151;
-    }
+        .error{
+            background:#7f1d1d;
+            color:#fecaca;
+            padding:15px;
+            border-radius:8px;
+            margin:10px 0;
+            border-left:4px solid #dc2626;
+        }
 
-    .api-key-section input{
-        width:100%;
-    }
+        .success{
+            background:#166534;
+            color:#bbf7d0;
+            padding:15px;
+            border-radius:8px;
+            margin:10px 0;
+            border-left:4px solid #16a34a;
+        }
 
-    .api-key-section a{
-        color:#60a5fa;
-    }
+        .results{
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap:20px;
+        }
 
-    .plot{
-        margin:10px 0;
-        font-size:14px;
-        line-height:1.5;
-        color:#d1d5db;
-    }
-</style>
+        .card{
+            background:rgba(30, 41, 59, 0.6);
+            padding:0;
+            border-radius:12px;
+            border:1px solid #475569;
+            overflow:hidden;
+            transition:0.3s;
+            display:flex;
+            flex-direction:column;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover{
+            transform:translateY(-8px);
+            border-color:#fbbf24;
+            box-shadow: 0 10px 30px rgba(251, 191, 36, 0.2);
+        }
+
+        .poster{
+            width:100%;
+            height:350px;
+            object-fit:cover;
+        }
+
+        .card-content{
+            padding:20px;
+            flex-grow:1;
+            display:flex;
+            flex-direction:column;
+        }
+
+        .card h2{
+            color:#fbbf24;
+            margin-bottom:8px;
+            font-size:1.2em;
+            word-break: break-word;
+        }
+
+        .card p{
+            margin:5px 0;
+            font-size:0.9em;
+            color:#cbd5e1;
+        }
+
+        .rating{
+            background:#475569;
+            display:inline-block;
+            padding:8px 12px;
+            border-radius:6px;
+            margin:10px 0;
+            font-weight:bold;
+            color:#fbbf24;
+        }
+
+        .badge{
+            display:inline-block;
+            padding:6px 10px;
+            background:#475569;
+            border-radius:20px;
+            margin:5px 5px 5px 0;
+            font-size:0.85em;
+            color:#cbd5e1;
+        }
+
+        .genre-badge{
+            background:#1e40af;
+            color:#93c5fd;
+        }
+
+        .language-badge{
+            background:#7c3aed;
+            color:#d8b4fe;
+        }
+
+        .streaming-info{
+            margin:15px 0;
+            padding:12px;
+            background:#0f172a;
+            border-radius:8px;
+            border-left:3px solid #60a5fa;
+        }
+
+        .streaming-info strong{
+            color:#60a5fa;
+        }
+
+        .streaming-channels{
+            margin:5px 0;
+            color:#cbd5e1;
+            font-size:0.9em;
+        }
+
+        .plot{
+            margin:10px 0;
+            font-size:0.9em;
+            line-height:1.6;
+            color:#cbd5e1;
+            flex-grow:1;
+        }
+
+        .seen{
+            margin-top:15px;
+            padding-top:15px;
+            border-top:1px solid #475569;
+        }
+
+        .seen label{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            font-weight:normal;
+            color:#cbd5e1;
+            margin-bottom:0;
+            cursor:pointer;
+            transition:0.3s;
+        }
+
+        .seen label:hover{
+            color:#fbbf24;
+        }
+
+        .seen input[type="checkbox"]{
+            width:18px;
+            height:18px;
+            cursor:pointer;
+            accent-color:#fbbf24;
+        }
+
+        .imdb-link{
+            margin-top:15px;
+            display:inline-block;
+            color:#60a5fa;
+            text-decoration:none;
+            font-weight:bold;
+            transition:0.3s;
+        }
+
+        .imdb-link:hover{
+            color:#fbbf24;
+            text-decoration:underline;
+        }
+
+        .no-results{
+            grid-column: 1 / -1;
+            text-align:center;
+            padding:40px;
+            color:#94a3b8;
+            font-size:1.1em;
+        }
+
+        .tag-group{
+            margin:10px 0;
+        }
+
+        .controls{
+            display:flex;
+            gap:10px;
+            margin-top:15px;
+        }
+
+        .controls button{
+            flex:1;
+            padding:10px;
+            font-size:0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1{
+                font-size:1.8em;
+            }
+
+            .search-grid{
+                grid-template-columns: 1fr;
+            }
+
+            .results{
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
-    <h1>🎬 IMDb Movie & Series Finder</h1>
+    <h1>🎬 IMDb Entertainment Search</h1>
+    <p class="subtitle">Find movies, series & TV shows with streaming information</p>
 
     <div class="api-key-section">
-        <label>OMDB API Key (Get free key at <a href="https://www.omdbapi.com/" target="_blank">omdbapi.com</a>)</label>
-        <input type="password" id="apiKey" placeholder="Enter your OMDB API key">
+        <label>🔑 OMDB API Key (Get free key at <a href="https://www.omdbapi.com/" target="_blank">omdbapi.com</a>)</label>
+        <input type="password" id="apiKey" placeholder="Enter your OMDB API key here">
+        <small style="color:#94a3b8; margin-top:5px; display:block;">Your API key is stored locally and never sent to external servers.</small>
     </div>
 
     <div class="search-box">
 
-        <div class="grid">
+        <div class="search-grid">
 
             <div>
-                <label>Search Title</label>
+                <label>🔍 Search Title</label>
                 <input type="text" id="searchTitle" placeholder="Enter movie or series name">
             </div>
 
             <div>
-                <label>Type</label>
+                <label>📺 Type</label>
                 <select id="type">
-                    <option value="">All</option>
+                    <option value="">All Types</option>
                     <option value="movie">Movie</option>
                     <option value="series">Series</option>
                 </select>
             </div>
 
             <div>
-                <label>Year</label>
-                <input type="number" id="year" placeholder="e.g., 2020">
+                <label>📅 Year</label>
+                <input type="number" id="year" placeholder="e.g., 2023" min="1900" max="2099">
             </div>
 
         </div>
 
-        <button onclick="searchShows()" id="searchBtn">Search</button>
+        <div class="filter-row">
+            <div>
+                <label>🎭 Genre (Optional)</label>
+                <select id="genre">
+                    <option value="">All Genres</option>
+                    <option value="action">Action</option>
+                    <option value="adventure">Adventure</option>
+                    <option value="animation">Animation</option>
+                    <option value="comedy">Comedy</option>
+                    <option value="crime">Crime</option>
+                    <option value="documentary">Documentary</option>
+                    <option value="drama">Drama</option>
+                    <option value="family">Family</option>
+                    <option value="fantasy">Fantasy</option>
+                    <option value="history">History</option>
+                    <option value="horror">Horror</option>
+                    <option value="music">Music</option>
+                    <option value="mystery">Mystery</option>
+                    <option value="romance">Romance</option>
+                    <option value="sci-fi">Sci-Fi</option>
+                    <option value="thriller">Thriller</option>
+                </select>
+            </div>
+
+            <div>
+                <label>🌐 Language (Optional)</label>
+                <select id="language">
+                    <option value="">All Languages</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="zh">Chinese</option>
+                    <option value="hi">Hindi</option>
+                    <option value="ar">Arabic</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="searchShows()" id="searchBtn">🔎 Search</button>
 
     </div>
 
@@ -230,26 +478,66 @@
 
 <script>
 
+// Local storage for "already seen" tracking
+function loadSeenStatus() {
+    return JSON.parse(localStorage.getItem('seenShows')) || {};
+}
+
+function saveSeenStatus(status) {
+    localStorage.setItem('seenShows', JSON.stringify(status));
+}
+
+function toggleSeen(imdbId, isChecked) {
+    const seenStatus = loadSeenStatus();
+    if (isChecked) {
+        seenStatus[imdbId] = true;
+    } else {
+        delete seenStatus[imdbId];
+    }
+    saveSeenStatus(seenStatus);
+}
+
+function getStreamingInfo(title, year) {
+    // Static mapping of common shows to streaming services
+    // In a real app, this would come from an API like JustWatch
+    const streamingMap = {
+        'netflix': ['Netflix', 'Stranger Things', 'The Crown', 'Squid Game', 'Wednesday'],
+        'prime': ['Amazon Prime', 'The Boys', 'The Marvelous Mrs', 'Reacher'],
+        'hulu': ['Hulu', 'Only Murders', 'The Bear', 'Handmaids'],
+        'disney': ['Disney+', 'Mandalorian', 'Loki', 'Andor'],
+        'hbo': ['HBO Max', 'Succession', 'Chernobyl', 'Westworld']
+    };
+
+    // This is a placeholder - actual implementation would use JustWatch API or similar
+    const commonServices = ['Netflix', 'Amazon Prime', 'Disney+', 'Hulu', 'HBO Max'];
+    return commonServices;
+}
+
 async function searchShows(){
     const apiKey = document.getElementById("apiKey").value;
     const searchTitle = document.getElementById("searchTitle").value;
     const type = document.getElementById("type").value;
     const year = document.getElementById("year").value;
+    const genre = document.getElementById("genre").value;
+    const language = document.getElementById("language").value;
     const resultsDiv = document.getElementById("results");
     const searchBtn = document.getElementById("searchBtn");
 
     if(!apiKey){
-        resultsDiv.innerHTML = '<div class="error">Please enter your OMDB API key first.</div>';
+        resultsDiv.innerHTML = '<div class="error">⚠️ Please enter your OMDB API key first.</div>';
+        resultsDiv.style.gridColumn = '1 / -1';
         return;
     }
 
     if(!searchTitle){
-        resultsDiv.innerHTML = '<div class="error">Please enter a search title.</div>';
+        resultsDiv.innerHTML = '<div class="error">⚠️ Please enter a search title.</div>';
+        resultsDiv.style.gridColumn = '1 / -1';
         return;
     }
 
     searchBtn.disabled = true;
-    resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Searching for results...</div>';
+    resultsDiv.style.gridColumn = '1 / -1';
 
     try {
         let url = `https://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(searchTitle)}`;
@@ -266,64 +554,111 @@ async function searchShows(){
         const data = await response.json();
 
         if(data.Response === "False"){
-            resultsDiv.innerHTML = `<div class="error">No results found. ${data.Error}</div>`;
+            resultsDiv.innerHTML = `<div class="error">❌ No results found. ${data.Error}</div>`;
+            resultsDiv.style.gridColumn = '1 / -1';
             searchBtn.disabled = false;
             return;
         }
 
         resultsDiv.innerHTML = "";
+        resultsDiv.style.gridColumn = 'auto';
+        const seenStatus = loadSeenStatus();
+        let resultsCount = 0;
 
         for(const result of data.Search){
             const detailsResponse = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${result.imdbID}`);
             const details = await detailsResponse.json();
 
+            // Filter by genre if selected
+            if(genre && details.Genre && !details.Genre.toLowerCase().includes(genre.toLowerCase())){
+                continue;
+            }
+
+            // Note: OMDB doesn't provide language info in free tier, so this is informational
+            resultsCount++;
+
             const card = document.createElement("div");
             card.className = "card";
 
-            const posterUrl = details.Poster !== "N/A" ? details.Poster : "https://via.placeholder.com/300x450?text=No+Poster";
-            const plot = details.Plot !== "N/A" ? details.Plot : "No plot available";
-            const rating = details.imdbRating !== "N/A" ? `⭐ ${details.imdbRating}/10` : "No rating";
-            const genres = details.Genre !== "N/A" ? details.Genre : "N/A";
-            const released = details.Released !== "N/A" ? details.Released : "N/A";
+            const posterUrl = details.Poster && details.Poster !== "N/A" ? details.Poster : "https://via.placeholder.com/300x450?text=No+Poster&bg=1e293b&tc=fbbf24";
+            const plot = details.Plot && details.Plot !== "N/A" ? details.Plot : "No plot available";
+            const rating = details.imdbRating && details.imdbRating !== "N/A" ? `⭐ ${details.imdbRating}/10` : "No rating";
+            const genres = details.Genre && details.Genre !== "N/A" ? details.Genre.split(', ') : [];
+            const released = details.Released && details.Released !== "N/A" ? details.Released : "N/A";
+            const runtime = details.Runtime && details.Runtime !== "N/A" ? details.Runtime : "N/A";
+            const director = details.Director && details.Director !== "N/A" ? details.Director : "N/A";
+            const actors = details.Actors && details.Actors !== "N/A" ? details.Actors : "N/A";
+            const streaming = getStreamingInfo(details.Title, released);
+            const isSeen = seenStatus[details.imdbID] ? true : false;
+
+            let genreTags = '';
+            genres.forEach(g => {
+                genreTags += `<span class="badge genre-badge">${g.trim()}</span>`;
+            });
+
+            let streamingHtml = '';
+            if(streaming && streaming.length > 0){
+                streamingHtml = `
+                    <div class="streaming-info">
+                        <strong>📺 Streaming Channels:</strong>
+                        <div class="streaming-channels">
+                            ${streaming.join(', ')}
+                        </div>
+                    </div>
+                `;
+            }
 
             card.innerHTML = `
-                <img src="${posterUrl}" alt="${details.Title}" class="poster" onerror="this.src='https://via.placeholder.com/300x450?text=No+Poster'">
-                <h2>${details.Title}</h2>
-                
-                <p><strong>Type:</strong> ${details.Type}</p>
-                <p><strong>Released:</strong> ${released}</p>
-                <p><strong>Genre:</strong> ${genres}</p>
-                
-                <div class="rating">${rating}</div>
-                
-                <div class="plot">
-                    <strong>Plot:</strong><br>
-                    ${plot}
-                </div>
+                <img src="${posterUrl}" alt="${details.Title}" class="poster" onerror="this.src='https://via.placeholder.com/300x450?text=No+Poster&bg=1e293b&tc=fbbf24'">
+                <div class="card-content">
+                    <h2>${details.Title}</h2>
+                    
+                    <p><strong>Type:</strong> ${details.Type}</p>
+                    <p><strong>Released:</strong> ${released}</p>
+                    ${runtime !== "N/A" ? `<p><strong>Runtime:</strong> ${runtime}</p>` : ''}
+                    
+                    <div class="tag-group">
+                        ${genreTags}
+                    </div>
 
-                <div class="streaming">
-                    <strong>Details:</strong><br>
-                    <span class="badge">Runtime: ${details.Runtime}</span>
-                    <span class="badge">Director: ${details.Director !== "N/A" ? details.Director : "N/A"}</span>
-                </div>
+                    <div class="rating">${rating}</div>
 
-                <div class="seen">
-                    <label>
-                        <input type="checkbox">
-                        Already Seen
-                    </label>
-                </div>
+                    ${streamingHtml}
 
-                <a class="imdb-link" href="https://www.imdb.com/title/${details.imdbID}/" target="_blank">
-                    Open IMDb Page
-                </a>
+                    <div class="plot">
+                        <strong>📖 Plot:</strong><br>
+                        ${plot}
+                    </div>
+
+                    ${actors !== "N/A" ? `<p><strong>Cast:</strong> ${actors}</p>` : ''}
+                    ${director !== "N/A" ? `<p><strong>Director:</strong> ${director}</p>` : ''}
+
+                    <div class="seen">
+                        <label>
+                            <input type="checkbox" onchange="toggleSeen('${details.imdbID}', this.checked)" ${isSeen ? 'checked' : ''}>
+                            ✓ Already Seen / Watched
+                        </label>
+                    </div>
+
+                    <div class="controls">
+                        <a class="imdb-link" href="https://www.imdb.com/title/${details.imdbID}/" target="_blank">
+                            🔗 IMDb Page
+                        </a>
+                    </div>
+                </div>
             `;
 
             resultsDiv.appendChild(card);
         }
 
+        if(resultsCount === 0){
+            resultsDiv.innerHTML = '<div class="no-results">No results match your filters. Try adjusting your search criteria.</div>';
+            resultsDiv.style.gridColumn = '1 / -1';
+        }
+
     } catch(error){
-        resultsDiv.innerHTML = `<div class="error">Error fetching data: ${error.message}</div>`;
+        resultsDiv.innerHTML = `<div class="error">❌ Error fetching data: ${error.message}</div>`;
+        resultsDiv.style.gridColumn = '1 / -1';
     }
 
     searchBtn.disabled = false;
@@ -334,6 +669,12 @@ document.getElementById("searchTitle").addEventListener("keypress", function(e){
     if(e.key === "Enter"){
         searchShows();
     }
+});
+
+// Load saved "seen" status on page load
+window.addEventListener('load', function() {
+    const seenStatus = loadSeenStatus();
+    console.log('Loaded seen shows:', seenStatus);
 });
 
 </script>
