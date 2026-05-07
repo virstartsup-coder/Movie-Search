@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IMDb Finder</title>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family: Arial, sans-serif;
+    }
+
+    body{
+        background:#111827;
+        color:white;
+        padding:30px;
+    }
+
+    .container{
+        max-width:1200px;
+        margin:auto;
+    }
+
+    h1{
+        text-align:center;
+        margin-bottom:25px;
+        color:#f5c518;
+    }
+
+    .search-box{
+        background:#1f2937;
+        padding:20px;
+        border-radius:12px;
+        margin-bottom:30px;
+    }
+
+    .grid{
+        display:grid;
+        grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+        gap:20px;
+    }
+
+    label{
+        display:block;
+        margin-bottom:8px;
+        font-weight:bold;
+    }
+
+    input, select{
+        width:100%;
+        padding:12px;
+        border:none;
+        border-radius:8px;
+        outline:none;
+    }
+
+    button{
+        margin-top:25px;
+        width:100%;
+        padding:14px;
+        border:none;
+        border-radius:8px;
+        background:#f5c518;
+        color:black;
+        font-size:16px;
+        font-weight:bold;
+        cursor:pointer;
+    }
+
+    button:hover{
+        opacity:0.9;
+    }
+
+    .results{
+        display:grid;
+        grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+        gap:20px;
+    }
+
+    .card{
+        background:#1f2937;
+        padding:20px;
+        border-radius:12px;
+        border:1px solid #374151;
+    }
+
+    .card h2{
+        color:#f5c518;
+        margin-bottom:10px;
+    }
+
+    .streaming{
+        margin:10px 0;
+    }
+
+    .badge{
+        display:inline-block;
+        padding:6px 12px;
+        background:#374151;
+        border-radius:20px;
+        margin:5px 5px 0 0;
+        font-size:14px;
+    }
+
+    .seen{
+        margin-top:15px;
+    }
+
+    .seen label{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        font-weight:normal;
+    }
+
+    .imdb-link{
+        margin-top:15px;
+        display:inline-block;
+        color:#60a5fa;
+        text-decoration:none;
+    }
+
+    .imdb-link:hover{
+        text-decoration:underline;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎬 IMDb Movie & Series Finder</h1>
+
+    <div class="search-box">
+
+        <div class="grid">
+
+            <div>
+                <label>IMDb Link</label>
+                <input type="text" id="imdbLink" placeholder="Paste IMDb link here">
+            </div>
+
+            <div>
+                <label>Genre</label>
+                <select id="genre">
+                    <option>All</option>
+                    <option>Action</option>
+                    <option>Comedy</option>
+                    <option>Drama</option>
+                    <option>Thriller</option>
+                    <option>Sci-Fi</option>
+                    <option>Romance</option>
+                    <option>Crime</option>
+                    <option>Horror</option>
+                    <option>Adventure</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Language</label>
+                <select id="language">
+                    <option>All</option>
+                    <option>English</option>
+                    <option>Hindi</option>
+                    <option>Tamil</option>
+                    <option>Telugu</option>
+                    <option>Korean</option>
+                    <option>Japanese</option>
+                    <option>Spanish</option>
+                    <option>French</option>
+                </select>
+            </div>
+
+        </div>
+
+        <button onclick="searchShows()">Search</button>
+
+    </div>
+
+    <div class="results" id="results"></div>
+
+</div>
+
+<script>
+
+const sampleData = [
+    {
+        name:"Breaking Bad",
+        genre:"Drama",
+        language:"English",
+        streaming:["Netflix"],
+        imdb:"https://www.imdb.com/title/tt0903747/"
+    },
+    {
+        name:"Money Heist",
+        genre:"Crime",
+        language:"Spanish",
+        streaming:["Netflix"],
+        imdb:"https://www.imdb.com/title/tt6468322/"
+    },
+    {
+        name:"Dark",
+        genre:"Sci-Fi",
+        language:"German",
+        streaming:["Netflix"],
+        imdb:"https://www.imdb.com/title/tt5753856/"
+    },
+    {
+        name:"Mirzapur",
+        genre:"Crime",
+        language:"Hindi",
+        streaming:["Amazon Prime Video"],
+        imdb:"https://www.imdb.com/title/tt6473300/"
+    },
+    {
+        name:"The Boys",
+        genre:"Action",
+        language:"English",
+        streaming:["Amazon Prime Video"],
+        imdb:"https://www.imdb.com/title/tt1190634/"
+    },
+    {
+        name:"Stranger Things",
+        genre:"Sci-Fi",
+        language:"English",
+        streaming:["Netflix"],
+        imdb:"https://www.imdb.com/title/tt4574334/"
+    }
+];
+
+function searchShows(){
+
+    const genre = document.getElementById("genre").value;
+    const language = document.getElementById("language").value;
+
+    const resultsDiv = document.getElementById("results");
+
+    resultsDiv.innerHTML = "";
+
+    const filtered = sampleData.filter(show => {
+
+        const genreMatch = genre === "All" || show.genre === genre;
+        const languageMatch = language === "All" || show.language === language;
+
+        return genreMatch && languageMatch;
+    });
+
+    if(filtered.length === 0){
+        resultsDiv.innerHTML = "<p>No shows found.</p>";
+        return;
+    }
+
+    filtered.forEach(show => {
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <h2>${show.name}</h2>
+
+            <p><strong>Genre:</strong> ${show.genre}</p>
+            <p><strong>Language:</strong> ${show.language}</p>
+
+            <div class="streaming">
+                <strong>Available On:</strong><br>
+                ${show.streaming.map(platform => `<span class="badge">${platform}</span>`).join("")}
+            </div>
+
+            <div class="seen">
+                <label>
+                    <input type="checkbox">
+                    Already Seen
+                </label>
+            </div>
+
+            <a class="imdb-link" href="${show.imdb}" target="_blank">
+                Open IMDb Page
+            </a>
+        `;
+
+        resultsDiv.appendChild(card);
+    });
+
+}
+
+</script>
+
+</body>
+</html>
