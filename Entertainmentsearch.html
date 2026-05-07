@@ -390,8 +390,8 @@
 
 <div class="container">
 
-    <h1>🎬 IMDb Entertainment Search</h1>
-    <p class="subtitle">Find movies, series & TV shows with streaming information</p>
+    <h1>🎬 IMDb Entertainment Discovery</h1>
+    <p class="subtitle">Discover new movies, series & TV shows</p>
 
     <div class="api-key-section">
         <label>🔑 OMDB API Key (Get free key at <a href="https://www.omdbapi.com/" target="_blank">omdbapi.com</a>)</label>
@@ -401,13 +401,7 @@
 
     <div class="search-box">
 
-        <div class="search-grid">
-
-            <div>
-                <label>🔍 Search Title</label>
-                <input type="text" id="searchTitle" placeholder="Enter movie or series name">
-            </div>
-
+        <div class="filter-row">
             <div>
                 <label>📺 Type</label>
                 <select id="type">
@@ -417,14 +411,6 @@
                 </select>
             </div>
 
-            <div>
-                <label>📅 Year</label>
-                <input type="number" id="year" placeholder="e.g., 2023" min="1900" max="2099">
-            </div>
-
-        </div>
-
-        <div class="filter-row">
             <div>
                 <label>🎭 Genre (Optional)</label>
                 <select id="genre">
@@ -468,7 +454,7 @@
             </div>
         </div>
 
-        <button onclick="searchShows()" id="searchBtn">🔎 Search</button>
+        <button onclick="discoverShows()" id="searchBtn">🎲 Discover</button>
 
     </div>
 
@@ -513,11 +499,27 @@ function getStreamingInfo(title, year) {
     return commonServices;
 }
 
-async function searchShows(){
+function getRandomSearchTerm() {
+    // Popular random search terms for discovery
+    const searchTerms = [
+        'the',
+        'a',
+        'movie',
+        'film',
+        'series',
+        'show',
+        'action',
+        'drama',
+        'comedy',
+        'thriller',
+        'adventure'
+    ];
+    return searchTerms[Math.floor(Math.random() * searchTerms.length)];
+}
+
+async function discoverShows(){
     const apiKey = document.getElementById("apiKey").value;
-    const searchTitle = document.getElementById("searchTitle").value;
     const type = document.getElementById("type").value;
-    const year = document.getElementById("year").value;
     const genre = document.getElementById("genre").value;
     const language = document.getElementById("language").value;
     const resultsDiv = document.getElementById("results");
@@ -529,32 +531,23 @@ async function searchShows(){
         return;
     }
 
-    if(!searchTitle){
-        resultsDiv.innerHTML = '<div class="error">⚠️ Please enter a search title.</div>';
-        resultsDiv.style.gridColumn = '1 / -1';
-        return;
-    }
-
     searchBtn.disabled = true;
-    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Searching for results...</div>';
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Discovering new content...</div>';
     resultsDiv.style.gridColumn = '1 / -1';
 
     try {
-        let url = `https://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(searchTitle)}`;
+        const searchTerm = getRandomSearchTerm();
+        let url = `https://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(searchTerm)}&page=${Math.floor(Math.random() * 3) + 1}`;
         
         if(type){
             url += `&type=${type}`;
-        }
-
-        if(year){
-            url += `&y=${year}`;
         }
 
         const response = await fetch(url);
         const data = await response.json();
 
         if(data.Response === "False"){
-            resultsDiv.innerHTML = `<div class="error">❌ No results found. ${data.Error}</div>`;
+            resultsDiv.innerHTML = `<div class="error">❌ No results found. Try again!</div>`;
             resultsDiv.style.gridColumn = '1 / -1';
             searchBtn.disabled = false;
             return;
@@ -652,7 +645,7 @@ async function searchShows(){
         }
 
         if(resultsCount === 0){
-            resultsDiv.innerHTML = '<div class="no-results">No results match your filters. Try adjusting your search criteria.</div>';
+            resultsDiv.innerHTML = '<div class="no-results">No results match your filters. Try again!</div>';
             resultsDiv.style.gridColumn = '1 / -1';
         }
 
@@ -663,13 +656,6 @@ async function searchShows(){
 
     searchBtn.disabled = false;
 }
-
-// Allow Enter key to search
-document.getElementById("searchTitle").addEventListener("keypress", function(e){
-    if(e.key === "Enter"){
-        searchShows();
-    }
-});
 
 // Load saved "seen" status on page load
 window.addEventListener('load', function() {
